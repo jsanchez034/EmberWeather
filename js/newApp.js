@@ -1,11 +1,29 @@
 //cosm.request({url:"http://api.cosm.com/v2/feeds.json?lat=40.7964&lon=-73.962&distance=100&q=temperature", done: test}) -- Find all temperature Nodes!!
 cosm.setKey( 'TvtHeLkibFVnaKBu4zQxgbQHv4iSAKxydDlEUDBTa0lQZz0g' ); 
-App = Ember.Application.create();
+App = Ember.Application.create({
+	ready: function() {
+		var router = this.get('router');
+		router.get('findTempsController').connectControllers('application');
+	}
+});
 
 App.ApplicationView = Ember.View.extend({
   templateName: 'application'
+  
 });
-App.ApplicationController = Ember.Controller.extend();
+App.ApplicationController = Ember.Controller.extend({
+	loading: true,
+	target: function(){
+        return this;
+    }.property(),
+	  catchTest: function(test) {
+			var self = this,
+			    tempContent = self.controllers.findTempsController.content;
+			console.log('test');
+			console.log(self.get('lat'));
+			tempContent.set('lat', tempContent.get('lat') + 1);
+		}
+});
 
 App.AllContributorsController = Ember.ArrayController.extend();
 App.AllContributorsView = Ember.View.extend({
@@ -30,7 +48,13 @@ App.AllContributorsView = Ember.View.extend({
 });
 
 App.FindTempsController = Ember.ObjectController.extend({
-	
+	content: {},
+	applicationController: null,
+	loadingBinding: "applicationController.loading",
+	contentObs: function() {
+		var isDoneLoading = this.get('content').isLoading;
+		this.set('loading', isDoneLoading);
+	}.observes('content.isLoading')
 });
 
 App.FindTempsView = Ember.View.extend({
@@ -43,7 +67,6 @@ App.Temperature = Ember.Object.extend({
   indoorNodes: [], 
   outdoorNodes: [],
   notSpecNodes: [],
-  doneLoading: false,
   
   allTemps: function(){
 		return {
@@ -91,20 +114,17 @@ App.Temperature = Ember.Object.extend({
 		}
 		
 		return parseFloat(tempVal) || 0;
-	}
-
-});
-
-App.Temperature.reopenClass({
-	
+	},
+		
 	loadTemps: function(lat, lon) {
-		var self = this
+		var self = this,
 			tempObj = App.Temperature.create({
 				lat: lat,
 				lon: lon,
 				indoorNodes: [], 
 				outdoorNodes: [],
-				notSpecNodes: []
+				notSpecNodes: [],
+				isLoading: true
 			});
 		cosm.request(
 			{
@@ -130,14 +150,19 @@ App.Temperature.reopenClass({
 						}
 					}
 					
-					tempObj.set('doneLoading',true);
+					tempObj.set('isLoading',false);
 					
 			 }
 			});
 
 		return tempObj;
 	}
+
 });
+
+//App.Temperature.reopenClass({
+
+//});
 
 App.Contributor = Ember.Object.extend({
   loadMoreDetails: function(){
@@ -210,14 +235,14 @@ App.Router = Ember.Router.extend({
 		temperatures: Ember.Route.extend({
 			route: '/temp/:lat/:lon',
 			connectOutlets: function(router, context){
-				 router.get('applicationController').connectOutlet(
-                    'findTemps', context);
+				 router.get('applicationController').connectOutlet('findTemps', context);
 			},
 			serialize: function(router, context){
                 return {lat: context.get('lat'), lon: context.get('lon')};
             },
             deserialize: function(router, urlParams){
-                return App.Temperature.loadTemps(urlParams.lat, urlParams.lon);
+				var temp = App.Temperature.create({});
+                return temp.loadTemps(urlParams.lat, urlParams.lon);
             }
 		}),
         aContributor: Ember.Route.extend({

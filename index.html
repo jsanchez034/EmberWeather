@@ -22,7 +22,14 @@
 <body>
 <script type="text/x-handlebars" data-template-name="application">
   <h1>Ember Committers</h1>
+
+  <a {{action "catchTest"  on="click"}}>test click</a>
+    {{#if loading}}
+		<div class="loading">Loading....</div>
+	{{/if}}
   {{outlet}}
+
+
 </script>
 <script type="text/x-handlebars" data-template-name="contributors">
     {{#each person in controller}}
@@ -53,28 +60,28 @@
 </script>
 
 <script type="text/x-handlebars" data-template-name="temperatures">
-<div {{bindAttr class="controller.doneLoading::hidden"}}>
-	
-	{{#if controller.doneLoading}}
+<div {{bindAttr class="controller.isLoading"}}>
+
+	{{#unless controller.isLoading}}
 		<h2>Indoor</h2>
 		{{#each d in controller.allTemps.indoor}}
 		  {{d.creator}}<br/>
 		{{/each}}
-	{{/if}}
+	{{/unless}}
 	
-	{{#if controller.doneLoading}}
+	{{#unless controller.isLoading}}
 		<h2>Outdoor</h2>
 		{{#each d in controller.allTemps.outdoor}}
 		  {{d.creator}}<br/>
 		{{/each}}
-	{{/if}}
+	{{/unless}}
 	
-	{{#if controller.doneLoading}}
+	{{#unless controller.isLoading}}
 		<h2>None</h2>
 		{{#each d in controller.allTemps.special}}
 		  {{d.creator}}<br/>
 		{{/each}}
-	{{/if}}
+	{{/unless}}
 </div>
 
 </script>
@@ -84,7 +91,7 @@
   <script>window.jQuery || document.write('<script src="js/libs/jquery-1.7.2.min.js"><\/script>')</script>
   <script src="js/cosmjs/cosmjs-1.0.0.js"></script>
   <script src="js/libs/handlebars-1.0.0.beta.6.js"></script>
-  <script src="js/libs/ember-1.0.pre.min.js"></script>
+  <script src="js/libs/ember-1.0.pre.js"></script>
   <script src="js/newApp.js"></script>
 </body>
 </html>
