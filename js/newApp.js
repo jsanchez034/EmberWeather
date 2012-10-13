@@ -13,38 +13,6 @@ App.ApplicationView = Ember.View.extend({
 });
 App.ApplicationController = Ember.Controller.extend({
 	loading: true,
-	target: function(){
-        return this;
-    }.property(),
-	  catchTest: function(test) {
-			var self = this,
-			    tempContent = self.controllers.findTempsController.content;
-			console.log('test');
-			console.log(self.get('lat'));
-			tempContent.set('lat', tempContent.get('lat') + 1);
-		}
-});
-
-App.AllContributorsController = Ember.ArrayController.extend();
-App.AllContributorsView = Ember.View.extend({
-  templateName: 'contributors'
-});
-
-App.OneContributorView = Ember.View.extend({
-  templateName: 'a-contributor'
-});
-App.OneContributorController = Ember.ObjectController.extend();
-
-App.DetailsView = Ember.View.extend({
-  templateName: 'contributor-details'
-});
-App.ReposView = Ember.View.extend({
-    templateName: 'repos'
-});
-
-App.AllContributorsController = Ember.ArrayController.extend();
-App.AllContributorsView = Ember.View.extend({
-  templateName: 'contributors'
 });
 
 App.FindTempsController = Ember.ObjectController.extend({
@@ -54,7 +22,14 @@ App.FindTempsController = Ember.ObjectController.extend({
 	contentObs: function() {
 		var isDoneLoading = this.get('content').isLoading;
 		this.set('loading', isDoneLoading);
-	}.observes('content.isLoading')
+	}.observes('content.isLoading'),
+	changePosition: function(){
+		var newLat = (parseFloat(this.content.lat) + 1).toString();
+		App.get('router').send('changeLat', {
+		  lat: newLat,
+		  lon: '-73.974'
+		});
+	  }
 });
 
 App.FindTempsView = Ember.View.extend({
@@ -64,10 +39,16 @@ App.FindTempsView = Ember.View.extend({
 App.Temperature = Ember.Object.extend({
   lat: null,
   lon: null,
-  indoorNodes: [], 
-  outdoorNodes: [],
-  notSpecNodes: [],
-  
+  indoorNodes: null, 
+  outdoorNodes: null,
+  notSpecNodes: null,
+  isLoading: null,
+  init: function() {
+	this._super();
+	this.set('indoorNodes',[]);
+	this.set('outdoorNodes',[]);
+	this.set('notSpecNodes',[]);
+  },
   allTemps: function(){
 		return {
 			indoor: this.get('indoorNodes'),
@@ -116,19 +97,13 @@ App.Temperature = Ember.Object.extend({
 		return parseFloat(tempVal) || 0;
 	},
 		
-	loadTemps: function(lat, lon) {
-		var self = this,
-			tempObj = App.Temperature.create({
-				lat: lat,
-				lon: lon,
-				indoorNodes: [], 
-				outdoorNodes: [],
-				notSpecNodes: [],
-				isLoading: true
-			});
+	loadTemps: function() {
+		var self = this;
+		self.set('isLoading',true);
+		
 		cosm.request(
 			{
-			 url:"http://api.cosm.com/v2/feeds.json?lat=" + lat + "&lon=" + lon + "&distance=100&q=temperature",
+			 url:"http://api.cosm.com/v2/feeds.json?lat=" + self.lat + "&lon=" + self.lon + "&distance=100&q=temperature",
 			 done: function(response) {
 				var res = response.results,
 					i = res.length,
@@ -140,144 +115,53 @@ App.Temperature = Ember.Object.extend({
 						switch(exposure)
 						{
 							case 'indoor':
-							  tempObj.indoorNodes.addObject(App.Temperature.create(res[i]));
+							  self.indoorNodes.addObject(App.Temperature.create(res[i]));
 							  break;
 							case 'outdoor':
-							  tempObj.outdoorNodes.addObject(App.Temperature.create(res[i]));
+							  self.outdoorNodes.addObject(App.Temperature.create(res[i]));
 							  break;
 							default:
-							  tempObj.notSpecNodes.addObject(App.Temperature.create(res[i]));
+							  self.notSpecNodes.addObject(App.Temperature.create(res[i]));
 						}
 					}
 					
-					tempObj.set('isLoading',false);
+					self.set('isLoading',false);
 					
 			 }
 			});
 
-		return tempObj;
+		return self;
 	}
 
-});
-
-//App.Temperature.reopenClass({
-
-//});
-
-App.Contributor = Ember.Object.extend({
-  loadMoreDetails: function(){
-    $.ajax({
-      url: 'https://api.github.com/users/%@'.fmt(this.get('login')),
-      context: this,
-      dataType: 'jsonp',
-      success: function(response){
-        this.setProperties(response.data);
-      }
-    })
-  }, 
-  loadRepos: function(){
-      $.ajax({
-        url: 'https://api.github.com/users/%@/repos'.fmt(this.get('login')),
-        context: this,
-        dataType: 'jsonp',
-        success: function(response){
-          this.set('repos',response.data);
-        }
-    });
-  }
-});
-App.Contributor.reopenClass({
-  allContributors: [],
-  find: function(){
-	this.allContributors = [];
-    $.ajax({
-      url: 'https://api.github.com/repos/emberjs/ember.js/contributors',
-      dataType: 'jsonp',
-      context: this,
-      success: function(response){
-        this.allContributors.addObjects(
-            response.data.map(function(raw){
-                return App.Contributor.create(raw);
-            })
-        );
-      }
-    })
-    return this.allContributors;
-  }, 
-  findOne: function(username){
-    var contributor = App.Contributor.create({
-      login: username
-    });
-
-    $.ajax({
-      url: 'https://api.github.com/repos/emberjs/ember.js/contributors',
-      dataType: 'jsonp',
-      context: contributor,
-      success: function(response){
-        this.setProperties(response.data.filterProperty('login', username));
-      }
-    });
-    return contributor;
-  } 
 });
 
 App.Router = Ember.Router.extend({
     enableLogging: true,
     root: Ember.Route.extend({
-        contributors: Ember.Route.extend({
+		aRoute: Ember.Route.extend({
             route: '/',
-            showContributor: Ember.Route.transitionTo('aContributor'),
-            connectOutlets: function(router){
-                router.get('applicationController').connectOutlet(
-                    'allContributors', App.Contributor.find());
-            }
+			initialState: 'temperatures'
         }),
 		temperatures: Ember.Route.extend({
 			route: '/temp/:lat/:lon',
-			connectOutlets: function(router, context){
-				 router.get('applicationController').connectOutlet('findTemps', context);
+			changeLat: Ember.Route.transitionTo('temperatures'),
+			connectOutlets: function(router, temps){
+				 var currtemp = Ember.typeOf(temps) === 'instance' ? temps : App.Temperature.create({ lat: temps.lat, lon: temps.lon });
+
+				 router.get('applicationController').connectOutlet({
+							  name: 'findTemps',
+							  context: currtemp.loadTemps()
+							});
 			},
 			serialize: function(router, context){
-                return {lat: context.get('lat'), lon: context.get('lon')};
+				
+                return {lat: context.lat, lon: context.lon};
             },
             deserialize: function(router, urlParams){
-				var temp = App.Temperature.create({});
-                return temp.loadTemps(urlParams.lat, urlParams.lon);
+                return {lat: urlParams.lat, lon: urlParams.lon};
             }
-		}),
-        aContributor: Ember.Route.extend({
-            route: '/t/:githubUserName',
-            showAllContributors: Ember.Route.transitionTo('contributors'),
-            showDetails: Ember.Route.transitionTo('details'),
-            showRepos: Ember.Route.transitionTo('repos'),
-            connectOutlets: function(router, context){
-                router.get('applicationController').connectOutlet(
-                    'oneContributor', context);        
-            },
-            serialize: function(router, context){
-                return {githubUserName: context.get('login')};
-            },
-            deserialize: function(router, urlParams){
-                return App.Contributor.findOne(urlParams.githubUserName);
-            }, 
-            // child states
-			initialState: 'details',
-			details: Ember.Route.extend({
-			  route: '/',
-			  connectOutlets: function(router){
-				  router.get('oneContributorController.content').loadMoreDetails();
-				  router.get('oneContributorController').connectOutlet('details');
-			  }
-			}),
-			repos: Ember.Route.extend({
-			  route: '/repos',
-			  connectOutlets: function(router){
-				router.get('oneContributorController.content').loadRepos();  
-				router.get('oneContributorController').connectOutlet('repos');
-			  }
-			})
-        })
-    })
+		})
+	})
 });
 
 App.initialize();
