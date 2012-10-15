@@ -1,9 +1,11 @@
 //cosm.request({url:"http://api.cosm.com/v2/feeds.json?lat=40.7964&lon=-73.962&distance=100&q=temperature", done: test}) -- Find all temperature Nodes!!
 cosm.setKey( 'TvtHeLkibFVnaKBu4zQxgbQHv4iSAKxydDlEUDBTa0lQZz0g' ); 
+
 App = Ember.Application.create({
 	ready: function() {
 		var router = this.get('router');
 		router.get('findTempsController').connectControllers('application');
+		Ember.ENV.RAISE_ON_DEPRECATION = true;
 	}
 });
 
@@ -23,12 +25,21 @@ App.FindTempsController = Ember.ObjectController.extend({
 		var isDoneLoading = this.get('content').isLoading;
 		this.set('loading', isDoneLoading);
 	}.observes('content.isLoading'),
+	latlongObs: function(obj, keyName) {
+		if (this.get(keyName)) {
+			this.changePosition();
+		}
+
+	}.observes('content.changePos'),
 	changePosition: function(){
-		var newLat = (parseFloat(this.content.lat) + 1).toString();
+		var content = this.get('content')
+			lat = content.get('lat'),
+			lon = content.get('lon');
 		App.get('router').send('changeLat', {
-		  lat: newLat,
-		  lon: '-73.974'
+			lat: lat,
+			lon: lon
 		});
+
 	  }
 });
 
@@ -42,6 +53,7 @@ App.Temperature = Ember.Object.extend({
   indoorNodes: null, 
   outdoorNodes: null,
   notSpecNodes: null,
+  changePos: null,
   isLoading: null,
   init: function() {
 	this._super();
@@ -126,7 +138,12 @@ App.Temperature = Ember.Object.extend({
 					}
 					
 					self.set('isLoading',false);
-					
+					Gmap.TempModel = self;
+					Gmap.lat = self.lat;
+					Gmap.lon = self.lon;
+					Gmap.loadMap();
+
+					self.set('changePos', false);					
 			 }
 			});
 
@@ -146,12 +163,13 @@ App.Router = Ember.Router.extend({
 			route: '/temp/:lat/:lon',
 			changeLat: Ember.Route.transitionTo('temperatures'),
 			connectOutlets: function(router, temps){
-				 var currtemp = Ember.typeOf(temps) === 'instance' ? temps : App.Temperature.create({ lat: temps.lat, lon: temps.lon });
+				 var currtemp = App.Temperature.create({ lat: temps.lat, lon: temps.lon });
 
 				 router.get('applicationController').connectOutlet({
 							  name: 'findTemps',
 							  context: currtemp.loadTemps()
 							});
+				  
 			},
 			serialize: function(router, context){
 				
