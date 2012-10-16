@@ -1,7 +1,6 @@
 Gmap = {
   TempModel: null,
-  lat: null,
-  lon: null,
+  latLong: null,
   map: null,
   marker: null,
   mCenter: null,
@@ -17,12 +16,18 @@ Gmap = {
 	  self.map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions),
 	  self.marker = new google.maps.Marker({
 		position: center,
-		map: self.map
+		map: self.map,
+		draggable: true
 	  });
 	  
-	  google.maps.event.addListener(this.map, 'click', function(event) {
+	  google.maps.event.addListener(self.marker, 'dragend', function(event) {
 		self.setNewPosition(event.latLng);
 	  });
+	  
+	  google.maps.event.addListener(this.map, 'dblclick', function(event) {
+		self.setNewPosition(event.latLng);
+	  });
+	  
 	},
   loadMap: function() {
 	  var script = document.createElement("script");
@@ -37,11 +42,9 @@ Gmap = {
 	},
   setNewPosition: function(LatLong) {
     var tModel = this.TempModel;
-    this.lat = LatLong.lat();
-	this.lon = LatLong.lng();
+    this.latLong = LatLong;
 	this.marker.setPosition(LatLong);
-	this.map.panTo(LatLong);
-	
+		
 	tModel.set('isLoading', true);
 	tModel.set('lat', LatLong.lat().toString());
 	tModel.set('lon', LatLong.lng().toString());

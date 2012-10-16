@@ -15,14 +15,30 @@ App.ApplicationView = Ember.View.extend({
 });
 App.ApplicationController = Ember.Controller.extend({
 	loading: true,
+	GloadInc: 0
 });
 
 App.FindTempsController = Ember.ObjectController.extend({
 	content: {},
 	applicationController: null,
 	loadingBinding: "applicationController.loading",
+	loadIncBinding: "applicationController.GloadInc",
+	loadIncObs: function(obj, keyName) {
+		var val = this.get(keyName),
+		    newInc,
+			newIncStyle;
+		if (val > -1) {
+			newInc = Math.round(val * 100);
+			newIncStyle = "width: " + newInc + "%";
+			this.set('loadInc', newIncStyle);
+			if (newInc >= 101) {
+				this.set(keyName, -1);
+			}
+		}
+
+	}.observes('content.currLoadint'),
 	contentObs: function() {
-		var isDoneLoading = this.get('content').isLoading;
+		var isDoneLoading = this.get('content.isLoading');
 		this.set('loading', isDoneLoading);
 	}.observes('content.isLoading'),
 	latlongObs: function(obj, keyName) {
@@ -55,11 +71,13 @@ App.Temperature = Ember.Object.extend({
   notSpecNodes: null,
   changePos: null,
   isLoading: null,
+  currLoadint: null,
   init: function() {
 	this._super();
 	this.set('indoorNodes',[]);
 	this.set('outdoorNodes',[]);
 	this.set('notSpecNodes',[]);
+	this.set('currLoadint', 0);
   },
   allTemps: function(){
 		return {
@@ -112,6 +130,7 @@ App.Temperature = Ember.Object.extend({
 	loadTemps: function() {
 		var self = this;
 		self.set('isLoading',true);
+		self.set('currLoadint', 0.05);
 		
 		cosm.request(
 			{
@@ -119,7 +138,11 @@ App.Temperature = Ember.Object.extend({
 			 done: function(response) {
 				var res = response.results,
 					i = res.length,
+					begin = 1,
+					incUnit = 1/i,
 					resl;
+					
+					
 					
 					while(i--) {
 						resl = res[i].location;
@@ -135,15 +158,21 @@ App.Temperature = Ember.Object.extend({
 							default:
 							  self.notSpecNodes.addObject(App.Temperature.create(res[i]));
 						}
+						self.set('currLoadint', begin * incUnit);
+						begin = begin + 1;
 					}
 					
-					self.set('isLoading',false);
 					Gmap.TempModel = self;
 					Gmap.lat = self.lat;
 					Gmap.lon = self.lon;
 					Gmap.loadMap();
 
-					self.set('changePos', false);					
+					self.set('changePos', false);	
+					setTimeout(function() {
+						self.set('currLoadint', 102);
+						self.set('isLoading',false);
+						}, 600);
+								
 			 }
 			});
 
