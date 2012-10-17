@@ -1,19 +1,23 @@
 Gmap = {
   TempModel: null,
+  lat: null,
+  lon: null,
   latLong: null,
   map: null,
   marker: null,
-  mCenter: null,
-  intialize: function(reset) {
+  geoflag: null,
+  intialize: function(lat, lon) {
 	  var self = this,
-	      center = new google.maps.LatLng(self.lat, self.lon),
+	      center,
 	      mapOptions = {
 			zoom: 8,
-			center: center,
 			mapTypeId: google.maps.MapTypeId.ROADMAP
-		  };
-	  self.mCenter = center;
-	  self.map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions),
+		  },
+		  currRoute = App.get('router');
+	  center = new google.maps.LatLng(self.lat, self.lon);
+	  self.latLong = center;
+	  self.map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+	  self.map.setCenter(center);
 	  self.marker = new google.maps.Marker({
 		position: center,
 		map: self.map,
@@ -28,7 +32,43 @@ Gmap = {
 		self.setNewPosition(event.latLng);
 	  });
 	  
+	  if (currRoute.currentState.name === 'aRoute') {
+	  	navigator.geolocation.getCurrentPosition(self.getCurrentLocal, self.getDefaultLocal);
+		setTimeout(function() {
+			if (self.geoflag === null){
+				self.getDefaultLocal();
+			};
+		}, 3000);
+	  }
+	  
 	},
+  getCurrentLocal: function(p) {
+	var lat = p.coords.latitude,
+		lon = p.coords.longitude,
+		handler = App.get('router').currentState.name === 'aRoute' ? 'goToTemp' : 'changeLat';
+		
+		Gmap.setMyCenter(lat, lon);
+		App.get('router').send(handler, {
+			lat: lat,
+			lon: lon
+		});
+		
+		Gmap.geoflag = 1;
+		
+  },
+  getDefaultLocal: function(err) {
+		var LAT = '25.6925',
+			LON = '-80.2596',
+			handler = App.get('router').currentState.name === 'aRoute' ? 'goToTemp' : 'changeLat';
+  		
+		Gmap.setMyCenter(LAT, LON);
+		App.get('router').send(handler, {
+			lat: LAT,
+			lon: LON
+		});
+		
+		Gmap.geoflag = 1;
+  },
   loadMap: function() {
 	  var script = document.createElement("script");
 	  if (!document.getElementById("gmaps")) {
@@ -42,12 +82,18 @@ Gmap = {
 	},
   setNewPosition: function(LatLong) {
     var tModel = this.TempModel;
-    this.latLong = LatLong;
-	this.marker.setPosition(LatLong);
-		
-	tModel.set('isLoading', true);
-	tModel.set('lat', LatLong.lat().toString());
-	tModel.set('lon', LatLong.lng().toString());
-	tModel.set('changePos', true);	
-   }
+	
+		this.latLong = LatLong;
+		this.marker.setPosition(LatLong);
+			
+		tModel.set('isLoading', true);
+		tModel.set('lat', LatLong.lat().toString());
+		tModel.set('lon', LatLong.lng().toString());
+		tModel.set('changePos', true);	
+   },
+  setMyCenter: function(lat, lon) {
+		this.latLong = new google.maps.LatLng(lat, lon);
+		this.map.setCenter(this.latLong);
+		this.marker.setPosition(this.latLong);
+  }
 };

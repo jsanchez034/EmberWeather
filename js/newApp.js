@@ -6,6 +6,9 @@ App = Ember.Application.create({
 		var router = this.get('router');
 		router.get('findTempsController').connectControllers('application');
 		Ember.ENV.RAISE_ON_DEPRECATION = true;
+		Gmap.lat = '44.7964';
+		Gmap.lon = '-73.962';
+		Gmap.loadMap();
 	}
 });
 
@@ -163,9 +166,6 @@ App.Temperature = Ember.Object.extend({
 					}
 					
 					Gmap.TempModel = self;
-					Gmap.lat = self.lat;
-					Gmap.lon = self.lon;
-					Gmap.loadMap();
 
 					self.set('changePos', false);	
 					setTimeout(function() {
@@ -186,7 +186,7 @@ App.Router = Ember.Router.extend({
     root: Ember.Route.extend({
 		aRoute: Ember.Route.extend({
             route: '/',
-			initialState: 'temperatures'
+			goToTemp: Ember.Route.transitionTo('temperatures')
         }),
 		temperatures: Ember.Route.extend({
 			route: '/temp/:lat/:lon',
@@ -205,6 +205,7 @@ App.Router = Ember.Router.extend({
                 return {lat: context.lat, lon: context.lon};
             },
             deserialize: function(router, urlParams){
+				Gmap.setMyCenter(urlParams.lat, urlParams.lon);
                 return {lat: urlParams.lat, lon: urlParams.lon};
             }
 		})
