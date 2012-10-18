@@ -6,7 +6,8 @@ Gmap = {
   map: null,
   marker: null,
   geoflag: null,
-  intialize: function(lat, lon) {
+  etimeout: null,
+  intialize: function() {
 	  var self = this,
 	      center,
 	      mapOptions = {
@@ -33,16 +34,13 @@ Gmap = {
 	  });
 	  
 	  if (currRoute.currentState.name === 'aRoute') {
-	  	navigator.geolocation.getCurrentPosition(self.getCurrentLocal, self.getDefaultLocal);
-		setTimeout(function() {
-			if (self.geoflag === null){
-				self.getDefaultLocal();
-			};
-		}, 3000);
+		self.etimeout = setTimeout(self.getDefaultLocal, 10000);
+	  	navigator.geolocation.getCurrentPosition(self.getCurrentLocal, self.getDefaultLocal,{timeout:5000});
 	  }
 	  
 	},
   getCurrentLocal: function(p) {
+	clearTimeout(Gmap.etimeout);
 	var lat = p.coords.latitude,
 		lon = p.coords.longitude,
 		handler = App.get('router').currentState.name === 'aRoute' ? 'goToTemp' : 'changeLat';
@@ -53,10 +51,11 @@ Gmap = {
 			lon: lon
 		});
 		
-		Gmap.geoflag = 1;
+		//Gmap.geoflag = 1;
 		
   },
   getDefaultLocal: function(err) {
+		clearTimeout(Gmap.etimeout);
 		var LAT = '25.6925',
 			LON = '-80.2596',
 			handler = App.get('router').currentState.name === 'aRoute' ? 'goToTemp' : 'changeLat';
@@ -67,7 +66,7 @@ Gmap = {
 			lon: LON
 		});
 		
-		Gmap.geoflag = 1;
+		//Gmap.geoflag = 1;
   },
   loadMap: function() {
 	  var script = document.createElement("script");
@@ -75,7 +74,7 @@ Gmap = {
 		  script.id = "gmaps"
 		  script.type = "text/javascript";
 		  script.src = "http://maps.googleapis.com/maps/api/js?key=AIzaSyBN9sWx5KtunbDEB3xBs1urR_yWstUKmzs&sensor=true&callback=Gmap.intialize";
-		  document.body.appendChild(script);
+		  document.scripts[0].appendChild(script);
 	  } else {
 	    script = "";
 	  }

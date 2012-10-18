@@ -205,7 +205,12 @@ App.Router = Ember.Router.extend({
                 return {lat: context.lat, lon: context.lon};
             },
             deserialize: function(router, urlParams){
-				Gmap.setMyCenter(urlParams.lat, urlParams.lon);
+				if (typeof window.google === 'undefined')  {
+					Gmap.lat = urlParams.lat;
+					Gmap.lon = urlParams.lon;
+				} else { 
+					Gmap.setMyCenter(urlParams.lat, urlParams.lon);
+				}
                 return {lat: urlParams.lat, lon: urlParams.lon};
             }
 		})
