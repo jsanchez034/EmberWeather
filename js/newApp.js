@@ -17,8 +17,8 @@ App.ApplicationView = Ember.View.extend({
   
 });
 App.ApplicationController = Ember.Controller.extend({
-	loading: true,
-	GloadInc: 0
+	loading: false,
+	GloadInc: "width:10%"
 });
 
 App.FindTempsController = Ember.ObjectController.extend({
@@ -133,7 +133,7 @@ App.Temperature = Ember.Object.extend({
 	loadTemps: function() {
 		var self = this;
 		self.set('isLoading',true);
-		self.set('currLoadint', 0.05);
+		self.set('currLoadint', 0.10);
 		
 		cosm.request(
 			{
@@ -172,7 +172,6 @@ App.Temperature = Ember.Object.extend({
 						self.set('currLoadint', 102);
 						self.set('isLoading',false);
 						}, 600);
-								
 			 }
 			});
 
@@ -205,6 +204,7 @@ App.Router = Ember.Router.extend({
                 return {lat: context.lat, lon: context.lon};
             },
             deserialize: function(router, urlParams){
+				router.get('applicationController').set('loading', true);
 				if (typeof window.google === 'undefined')  {
 					Gmap.lat = urlParams.lat;
 					Gmap.lon = urlParams.lon;
