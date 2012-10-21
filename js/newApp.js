@@ -75,6 +75,7 @@ App.Temperature = Ember.Object.extend({
   changePos: null,
   isLoading: null,
   currLoadint: null,
+  tempUnts: 'C',
   init: function() {
 	this._super();
 	this.set('indoorNodes',[]);
@@ -82,6 +83,7 @@ App.Temperature = Ember.Object.extend({
 	this.set('notSpecNodes',[]);
 	this.set('currLoadint', 0);
   },
+  
   allTemps: function(){
 		return {
 			indoor: this.get('indoorNodes'),
@@ -89,27 +91,72 @@ App.Temperature = Ember.Object.extend({
 			special: this.get('notSpecNodes')
 		}
 	}.property('indoorNodes', 'outdoorNodes', 'notSpecNodes'),
-
-	getTemp: function(unts) {
-		var dtstream = this.get('datastream'),
+	
+	getCreatedDate: function() {
+		var d = this.get('created'),
+			curr_date,
+			curr_month,
+			curr_year;
+			
+		if(d) { 
+			d = new Date(d);
+			curr_date = d.getDate();
+			curr_month = d.getMonth() + 1;
+			curr_year = d.getFullYear();
+		
+		return curr_month + "/" + curr_date + "/" + curr_year;
+		
+		}
+	}.property('created'),
+	
+	getCreator: function() {
+		var crArr = this.get('creator').split("/");
+		return crArr[crArr.length -1];
+	}.property('creator'),
+	
+	getTags: function() {
+		var tags = this.get('tags');
+		if (tags) {
+			return tags.toString();
+		}
+		return "";
+		
+	}.property('tags'),
+	
+	getTemp: function() {
+		var dtstream = this.get('datastreams'),
+			unts = this.get('tempUnts'),
 			tempVal,
-			units = 'C';
-		var i = dtstream.length;
+			units = 'C',
+			thisdtstream,
+			tags,
+			t,
+			i;
+			
+			if(dtstream) i = dtstream.length;
+
 		while(i--) {
-			var thisdtstream = dtstream[i];
-			var tags = thisdtstream.tags;
+			thisdtstream = dtstream[i];
+			tags = thisdtstream.tags;
 			if (typeof thisdtstream.unit != 'undefined') { 
-			  if (typeof thisdtstream.unit.symbol != 'undefined')
+			  if (typeof thisdtstream.unit.symbol != 'undefined') {
 			       units = thisdtstream.unit.symbol.replace(/[^CF]/g,'');
-			  if (typeof thisdtstream.unit.label != 'undefined')
-				   units = thisdtstream.unit.label.replace(/[^CF]/g,'');	
+				   if (units !== "") tempVal = thisdtstream.current_value;
+				}
+			  if (typeof thisdtstream.unit.label != 'undefined') {
+				   units = thisdtstream.unit.label.replace(/[^CF]/g,'');
+				   if (units !== "") tempVal = thisdtstream.current_value;
+				}
+			    console.log("entered units " + units);
+			} else {
+				console.log("units not defined Celcius used");
 			}
 			if (thisdtstream.id.toLowerCase() == 'temperature') {
 			  tempVal = thisdtstream.current_value;
 			  break;
 			}
-			for(var t in tags){
-			  if(tags[t].toLowerCase() === 'temperature') {
+			for(t in tags){
+			  if(tags.hasOwnProperty(t) && tags[t].toLowerCase() === 'temperature') {
 			    //tempVal = thisdtstream.current_value < 0 || thisdtstream.current_value > 130 ? 0 : thisdtstream.current_value ;
 				tempVal = thisdtstream.current_value;
 				break;
@@ -127,8 +174,11 @@ App.Temperature = Ember.Object.extend({
 			  break;
 		}
 		
-		return parseFloat(tempVal) || 0;
-	},
+		if (parseFloat(tempVal)) {
+			return parseFloat(tempVal).toFixed(2) + " " + unts;
+		}
+		return "Bad Data!!";
+	}.property('tempUnts', 'datastreams'),
 		
 	loadTemps: function() {
 		var self = this;

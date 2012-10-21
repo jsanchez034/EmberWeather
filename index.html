@@ -62,7 +62,22 @@
 		{{#if controller.allTemps.indoor}}
 			<h2>Indoor</h2>
 			{{#each d in controller.allTemps.indoor}}
-			  {{d.creator}}<br/>
+			<div class="well well-small">
+			  <h3 class="text-success">{{d.getTemp}}</h3>
+			  <div>
+				<strong>Feed info</strong>
+				<div><span class="label">Title</span> {{d.title}}</div>
+				<div><span class="label">Creator</span> <a {{bindAttr href="d.creator"}} target="_blank" >{{d.getCreator}}</a></div>
+				<div><span class="label">Feed</span> <a {{bindAttr href="d.feed"}} target="_blank">The feed</a></div>
+				<div><span class="label">Created date</span> {{d.getCreatedDate}}</div>
+				<div><span class="label">Status</span> {{d.status}}</div>
+				{{#if d.getTags}}
+					<div><span class="label">Tags</span> {{d.getTags}}</div>
+				{{/if}}
+				<div><span class="label">Lat</span> {{d.location.lat}}</div>
+				<div><span class="label">Lon</span> {{d.location.lon}}</div>
+			  </div>
+			</div>
 			{{/each}}
 		{{else}}
 			<h3>No indoor nodes</h3>
@@ -73,7 +88,22 @@
 		{{#if controller.allTemps.outdoor}}
 			<h2>Outdoor</h2>
 			{{#each d in controller.allTemps.outdoor}}
-			  {{d.creator}}<br/>
+			<div class="well well-small">
+			  <h3 class="text-success">{{d.getTemp}}</h3>
+			  <div>
+				<strong>Feed info</strong>
+				<div><span class="label">Title</span> {{d.title}}</div>
+				<div><span class="label">Creator</span> <a {{bindAttr href="d.creator"}} target="_blank" >{{d.getCreator}}</a></div>
+				<div><span class="label">Feed</span> <a {{bindAttr href="d.feed"}} target="_blank">The feed</a></div>
+				<div><span class="label">Created date</span> {{d.getCreatedDate}}</div>
+				<div><span class="label">Status</span> {{d.status}}</div>
+				{{#if d.getTags}}
+					<div><span class="label">Tags</span> {{d.getTags}}</div>
+				{{/if}}
+				<div><span class="label">Lat</span> {{d.location.lat}}</div>
+				<div><span class="label">Lon</span> {{d.location.lon}}</div>
+			  </div>
+			</div>
 			{{/each}}
 		{{else}}
 			<h3>No Outdoor nodes</h3>
@@ -84,7 +114,22 @@
 		{{#if controller.allTemps.special}}
 			<h2>Misc.</h2>
 			{{#each d in controller.allTemps.special}}
-			  {{d.creator}}<br/>
+			<div class="well well-small">
+			  <h3 class="text-success">{{d.getTemp}}</h3>
+			  <div>
+				<strong>Feed info</strong>
+				<div><span class="label">Title</span> {{d.title}}</div>
+				<div><span class="label">Creator</span> <a {{bindAttr href="d.creator"}} target="_blank" >{{d.getCreator}}</a></div>
+				<div><span class="label">Feed</span> <a {{bindAttr href="d.feed"}} target="_blank">The feed</a></div>
+				<div><span class="label">Created date</span> {{d.getCreatedDate}}</div>
+				<div><span class="label">Status</span> {{d.status}}</div>
+				{{#if d.getTags}}
+					<div><span class="label">Tags</span> {{d.getTags}}</div>
+				{{/if}}
+				<div><span class="label">Lat</span> {{d.location.lat}}</div>
+				<div><span class="label">Lon</span> {{d.location.lon}}</div>
+			  </div>
+			</div>
 			{{/each}}
 		{{else}}
 			<h3>No Misc. nodes</h3>
@@ -104,6 +149,6 @@
   <script src="js/libs/handlebars-1.0.0.beta.6.js"></script>
   <script src="js/libs/ember-latest.js"></script>
   <script src="js/gmaps.js?v=139"></script>
-  <script src="js/newApp.js?v=142"></script>
+  <script src="js/newApp.js?v=160"></script>
 </body>
 </html>
