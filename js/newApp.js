@@ -1,14 +1,13 @@
-//cosm.request({url:"http://api.cosm.com/v2/feeds.json?lat=40.7964&lon=-73.962&distance=100&q=temperature", done: test}) -- Find all temperature Nodes!!
-cosm.setKey( 'TvtHeLkibFVnaKBu4zQxgbQHv4iSAKxydDlEUDBTa0lQZz0g' ); 
-
 App = Ember.Application.create({
 	ready: function() {
+		cosm.setKey( "prXnPTW5cdY7Hnl6QBl__UYyxl6SAKxsb1ZVSzM1SjBrOD0g" ); 
 		var router = this.get('router');
 		router.get('findTempsController').connectControllers('application');
 		Ember.ENV.RAISE_ON_DEPRECATION = true;
 		Gmap.lat = '44.7964';
 		Gmap.lon = '-73.962';
 		Gmap.loadMap();
+
 	}
 });
 
@@ -75,7 +74,7 @@ App.Temperature = Ember.Object.extend({
   changePos: null,
   isLoading: null,
   currLoadint: null,
-  tempUnts: 'C',
+  tempUnts: 'F',
   init: function() {
 	this._super();
 	this.set('indoorNodes',[]);
@@ -92,22 +91,22 @@ App.Temperature = Ember.Object.extend({
 		}
 	}.property('indoorNodes', 'outdoorNodes', 'notSpecNodes'),
 	
-	getCreatedDate: function() {
-		var d = this.get('created'),
-			curr_date,
-			curr_month,
-			curr_year;
+	getLastUpdateDate: function() {
+		var d = this.get('updated'),
+			date_arr,
+			time_arr,
+			sec;
 			
 		if(d) { 
-			d = new Date(d);
-			curr_date = d.getDate();
-			curr_month = d.getMonth() + 1;
-			curr_year = d.getFullYear();
+			d = d.split("T");
+			date_arr = d[0].split("-");
+			time_arr = d[1].split(":");
+			sec = time_arr[2].split("Z")[0].split(".")[0];
 		
-		return curr_month + "/" + curr_date + "/" + curr_year;
+		return date_arr[1] + "/" + date_arr[2] + "/" + date_arr[0] + " " + time_arr[0] + ":" + time_arr[1] + ":" + sec;
 		
 		}
-	}.property('created'),
+	}.property('updated'),
 	
 	getCreator: function() {
 		var crArr = this.get('creator').split("/");
@@ -128,6 +127,9 @@ App.Temperature = Ember.Object.extend({
 			unts = this.get('tempUnts'),
 			tempVal,
 			units = 'C',
+			sym = /^[^A-z0-9]?C$|^[^A-z0-9]?F$/gi,
+			mCel = /(celsius|celcius|C$)/gi,
+			mFar = /(fahrenheit|F$)/gi,
 			thisdtstream,
 			tags,
 			t,
@@ -139,25 +141,32 @@ App.Temperature = Ember.Object.extend({
 			thisdtstream = dtstream[i];
 			tags = thisdtstream.tags;
 			if (typeof thisdtstream.unit != 'undefined') { 
-			  if (typeof thisdtstream.unit.symbol != 'undefined') {
+			  if (typeof thisdtstream.unit.symbol != 'undefined' && sym.test(thisdtstream.unit.symbol)) {
 			       units = thisdtstream.unit.symbol.replace(/[^CF]/g,'');
-				   if (units !== "") tempVal = thisdtstream.current_value;
+				   if (units !== "") {
+					tempVal = thisdtstream.current_value;
+					break;
+					}
 				}
 			  if (typeof thisdtstream.unit.label != 'undefined') {
-				   units = thisdtstream.unit.label.replace(/[^CF]/g,'');
-				   if (units !== "") tempVal = thisdtstream.current_value;
+				   if (mCel.test(thisdtstream.unit.label)) {
+					units = "C";
+					tempVal = thisdtstream.current_value;
+					break;
+				   } else if(mFar.test(thisdtstream.unit.label)) {
+					units = "F";
+					tempVal = thisdtstream.current_value;
+					break;
+				   }
 				}
-			    console.log("entered units " + units);
-			} else {
-				console.log("units not defined Celcius used");
-			}
+			} 
+			
 			if (thisdtstream.id.toLowerCase() == 'temperature') {
 			  tempVal = thisdtstream.current_value;
 			  break;
 			}
 			for(t in tags){
 			  if(tags.hasOwnProperty(t) && tags[t].toLowerCase() === 'temperature') {
-			    //tempVal = thisdtstream.current_value < 0 || thisdtstream.current_value > 130 ? 0 : thisdtstream.current_value ;
 				tempVal = thisdtstream.current_value;
 				break;
 			  }
@@ -167,7 +176,7 @@ App.Temperature = Ember.Object.extend({
 		switch(units.toUpperCase())
 		{
 			case 'C':
-			  if (unts == 'F') tempVal = ((9/5) * (parseFloat(tempVal)+32));
+			  if (unts == 'F') tempVal = ((parseFloat(tempVal) * (9/5)) + 32);
 			  break;
 			case 'F':
 			  if (unts == 'C') tempVal = ((5/9) * (parseFloat(tempVal)-32));
@@ -176,8 +185,9 @@ App.Temperature = Ember.Object.extend({
 		
 		if (parseFloat(tempVal)) {
 			return parseFloat(tempVal).toFixed(2) + " " + unts;
+		} else {
+			return "Bad Data!!";
 		}
-		return "Bad Data!!";
 	}.property('tempUnts', 'datastreams'),
 		
 	loadTemps: function() {
@@ -187,7 +197,7 @@ App.Temperature = Ember.Object.extend({
 		
 		cosm.request(
 			{
-			 url:"http://api.cosm.com/v2/feeds.json?lat=" + self.lat + "&lon=" + self.lon + "&distance=100&q=temperature",
+			 url:"http://api.cosm.com/v2/feeds.json?lat=" + self.lat + "&lon=" + self.lon + "&distance=100&q=temperature&key=xc2IDXBLap9ht5uTLuizhWb-FM2SAKx5eXR1N3lLMVpBOD0g",
 			 done: function(response) {
 				var res = response.results,
 					i = res.length,

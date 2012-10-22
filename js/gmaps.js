@@ -73,7 +73,7 @@ Gmap = {
 	  if (!document.getElementById("gmaps")) {
 		  script.id = "gmaps"
 		  script.type = "text/javascript";
-		  script.src = "http://maps.googleapis.com/maps/api/js?key=AIzaSyBN9sWx5KtunbDEB3xBs1urR_yWstUKmzs&sensor=true&callback=Gmap.intialize";
+		  script.src = "http://maps.googleapis.com/maps/api/js?key=AIzaSyC05vai3ShwLXHvSAWkB92QD0KdW9hMqrA&sensor=true&callback=Gmap.intialize";
 		  document.scripts[0].appendChild(script);
 	  } else {
 	    script = "";

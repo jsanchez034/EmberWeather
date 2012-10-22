@@ -28,7 +28,7 @@
   <div class="row-fluid">
 	  <div class="span2"></div>
 	  <div class="span8 ">
-		  <h1 class="center">Cosm Temperatures</h1>
+		  <h1 class="center">Local Temperature Sensors</h1>
 		  <div class="row-fluid">
 			<div class="span12">
 				<div class="map">
@@ -69,7 +69,7 @@
 				<div><span class="label">Title</span> {{d.title}}</div>
 				<div><span class="label">Creator</span> <a {{bindAttr href="d.creator"}} target="_blank" >{{d.getCreator}}</a></div>
 				<div><span class="label">Feed</span> <a {{bindAttr href="d.feed"}} target="_blank">The feed</a></div>
-				<div><span class="label">Created date</span> {{d.getCreatedDate}}</div>
+				<div><span class="label">Last update</span> {{d.getLastUpdateDate}}</div>
 				<div><span class="label">Status</span> {{d.status}}</div>
 				{{#if d.getTags}}
 					<div><span class="label">Tags</span> {{d.getTags}}</div>
@@ -95,7 +95,7 @@
 				<div><span class="label">Title</span> {{d.title}}</div>
 				<div><span class="label">Creator</span> <a {{bindAttr href="d.creator"}} target="_blank" >{{d.getCreator}}</a></div>
 				<div><span class="label">Feed</span> <a {{bindAttr href="d.feed"}} target="_blank">The feed</a></div>
-				<div><span class="label">Created date</span> {{d.getCreatedDate}}</div>
+				<div><span class="label">Last update</span> {{d.getLastUpdateDate}}</div>
 				<div><span class="label">Status</span> {{d.status}}</div>
 				{{#if d.getTags}}
 					<div><span class="label">Tags</span> {{d.getTags}}</div>
@@ -121,7 +121,7 @@
 				<div><span class="label">Title</span> {{d.title}}</div>
 				<div><span class="label">Creator</span> <a {{bindAttr href="d.creator"}} target="_blank" >{{d.getCreator}}</a></div>
 				<div><span class="label">Feed</span> <a {{bindAttr href="d.feed"}} target="_blank">The feed</a></div>
-				<div><span class="label">Created date</span> {{d.getCreatedDate}}</div>
+				<div><span class="label">Last update</span> {{d.getLastUpdateDate}}</div>
 				<div><span class="label">Status</span> {{d.status}}</div>
 				{{#if d.getTags}}
 					<div><span class="label">Tags</span> {{d.getTags}}</div>
@@ -145,10 +145,10 @@
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
   <script>window.jQuery || document.write('<script src="js/libs/jquery-1.7.2.min.js"><\/script>')</script>
   <script src="js/libs/bootstrap.min.js"></script>
-  <script src="js/cosmjs/cosmjs-1.0.0.js"></script>
+  <script src="js/cosmjs/cosmjs-1.0.0.js?v=2"></script>
   <script src="js/libs/handlebars-1.0.0.beta.6.js"></script>
   <script src="js/libs/ember-latest.js"></script>
   <script src="js/gmaps.js?v=139"></script>
-  <script src="js/newApp.js?v=160"></script>
+  <script src="js/newApp.js?v=203"></script>
 </body>
 </html>
