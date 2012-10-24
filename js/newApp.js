@@ -1,6 +1,40 @@
+(function(){
+var D= new Date('2011-06-02T09:34:29+02:00');
+if(isNaN(D) || D.getUTCMonth()!== 5 || D.getUTCDate()!== 2 ||
+D.getUTCHours()!== 7 || D.getUTCMinutes()!== 34){
+    Date.fromISO= function(s){
+        var day, tz,
+        rx=/^(\d{4}\-\d\d\-\d\d([tT][\d:\.]*)?)([zZ]|([+\-])(\d\d):(\d\d))?$/,
+        p= rx.exec(s) || [];
+        if(p[1]){
+            day= p[1].split(/\D/);
+            for(var i= 0, L= day.length; i<L; i++){
+                day[i]= parseInt(day[i], 10) || 0;
+            }
+            day[1]-= 1;
+            day= new Date(Date.UTC.apply(Date, day));
+            if(!day.getDate()) return NaN;
+            if(p[5]){
+                tz= (parseInt(p[5], 10)*60);
+                if(p[6]) tz+= parseInt(p[6], 10);
+                if(p[4]== '+') tz*= -1;
+                if(tz) day.setUTCMinutes(day.getUTCMinutes()+ tz);
+            }
+            return day;
+        }
+        return NaN;
+    }
+}
+else{
+    Date.fromISO= function(s){
+        return new Date(s);
+    }
+}
+})()
+
 App = Ember.Application.create({
 	ready: function() {
-		cosm.setKey( "prXnPTW5cdY7Hnl6QBl__UYyxl6SAKxsb1ZVSzM1SjBrOD0g" ); 
+		cosm.setKey( "TvtHeLkibFVnaKBu4zQxgbQHv4iSAKxydDlEUDBTa0lQZz0g" ); 
 		var router = this.get('router');
 		router.get('findTempsController').connectControllers('application');
 		Ember.ENV.RAISE_ON_DEPRECATION = true;
@@ -75,6 +109,7 @@ App.Temperature = Ember.Object.extend({
   isLoading: null,
   currLoadint: null,
   tempUnts: 'F',
+  lastUpdate: null,
   init: function() {
 	this._super();
 	this.set('indoorNodes',[]);
@@ -92,21 +127,15 @@ App.Temperature = Ember.Object.extend({
 	}.property('indoorNodes', 'outdoorNodes', 'notSpecNodes'),
 	
 	getLastUpdateDate: function() {
-		var d = this.get('updated'),
-			date_arr,
-			time_arr,
-			sec;
+		var d = this.get('lastUpdate') || this.get('updated');
 			
 		if(d) { 
-			d = d.split("T");
-			date_arr = d[0].split("-");
-			time_arr = d[1].split(":");
-			sec = time_arr[2].split("Z")[0].split(".")[0];
+			d = Date.fromISO(d);
 		
-		return date_arr[1] + "/" + date_arr[2] + "/" + date_arr[0] + " " + time_arr[0] + ":" + time_arr[1] + ":" + sec;
+		return (d.getMonth() + 1) + "/" + d.getDate() + "/" + d.getFullYear() + " " + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
 		
 		}
-	}.property('updated'),
+	}.property('lastUpdate'),
 	
 	getCreator: function() {
 		var crArr = this.get('creator').split("/");
@@ -145,6 +174,7 @@ App.Temperature = Ember.Object.extend({
 			       units = thisdtstream.unit.symbol.replace(/[^CF]/g,'');
 				   if (units !== "") {
 					tempVal = thisdtstream.current_value;
+					this.set('lastUpdate', thisdtstream.at);
 					break;
 					}
 				}
@@ -152,10 +182,12 @@ App.Temperature = Ember.Object.extend({
 				   if (mCel.test(thisdtstream.unit.label)) {
 					units = "C";
 					tempVal = thisdtstream.current_value;
+					this.set('lastUpdate', thisdtstream.at);
 					break;
 				   } else if(mFar.test(thisdtstream.unit.label)) {
 					units = "F";
 					tempVal = thisdtstream.current_value;
+					this.set('lastUpdate', thisdtstream.at);
 					break;
 				   }
 				}
@@ -163,11 +195,13 @@ App.Temperature = Ember.Object.extend({
 			
 			if (thisdtstream.id.toLowerCase() == 'temperature') {
 			  tempVal = thisdtstream.current_value;
+			  this.set('lastUpdate', thisdtstream.at);
 			  break;
 			}
 			for(t in tags){
 			  if(tags.hasOwnProperty(t) && tags[t].toLowerCase() === 'temperature') {
 				tempVal = thisdtstream.current_value;
+				this.set('lastUpdate', thisdtstream.at);
 				break;
 			  }
 			}
@@ -197,7 +231,7 @@ App.Temperature = Ember.Object.extend({
 		
 		cosm.request(
 			{
-			 url:"http://api.cosm.com/v2/feeds.json?lat=" + self.lat + "&lon=" + self.lon + "&distance=100&q=temperature&key=xc2IDXBLap9ht5uTLuizhWb-FM2SAKx5eXR1N3lLMVpBOD0g",
+			 url:"http://api.cosm.com/v2/feeds.json?lat=" + self.lat + "&lon=" + self.lon + "&distance=100&q=temperature&key=TvtHeLkibFVnaKBu4zQxgbQHv4iSAKxydDlEUDBTa0lQZz0g",
 			 done: function(response) {
 				var res = response.results,
 					i = res.length,
