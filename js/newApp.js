@@ -45,77 +45,137 @@ App = Ember.Application.create({
 	}
 });
 
+App.o = Ember.Object.create({
+
+		});
+
 App.ApplicationView = Ember.View.extend({
   templateName: 'application'
   
 });
 App.ApplicationController = Ember.Controller.extend({
-	loading: false,
+	dloading: false,
 	GloadInc: "width:10%"
 });
 
-App.FindTempsController = Ember.ObjectController.extend({
-	content: {},
+App.FindTempsController = Ember.ArrayController.extend({
+	content: [],
 	applicationController: null,
-	loadingBinding: "applicationController.loading",
+	doneLoadingBinding: "applicationController.dloading",
 	loadIncBinding: "applicationController.GloadInc",
+	latestNode: null,
+	contentArrayDidChange: function(item, idx, removedCnt, addedCnt) {
+		var loc = item[idx];
+		if (addedCnt > 0) {
+			this.latestNode = loc;
+			loc.loadTemps();
+			Gmap.currentNode = loc;
+		}
+	},
 	loadIncObs: function(obj, keyName) {
-		var val = this.get(keyName),
-		    newInc,
-			newIncStyle;
-		if (val > -1) {
-			newInc = Math.round(val * 100);
-			newIncStyle = "width: " + newInc + "%";
-			this.set('loadInc', newIncStyle);
-			if (newInc >= 101) {
-				this.set(keyName, -1);
+		var loadingNode = this.latestNode;
+		if (this.latestNode !== null) {
+			var val = loadingNode.get('currLoadint'),
+				newInc,
+				newIncStyle;
+			if (val > -1) {
+				newInc = Math.round(val * 100);
+				newIncStyle = "width: " + newInc + "%";
+				this.set('loadInc', newIncStyle);
+				if (newInc >= 101) {
+					this.set(keyName, -1);
+					this.set('loadInc', "width: 10%");
+				}
 			}
 		}
-
-	}.observes('content.currLoadint'),
-	contentObs: function() {
-		var isDoneLoading = this.get('content.isLoading');
-		this.set('loading', isDoneLoading);
-	}.observes('content.isLoading'),
+	}.observes('content.@each.currLoadint'),
+	contentObs: function(obj, keyName, value) {
+		var isDoneLoading = this.findProperty('isDoneLoading', true),
+			selected;
+		
+		if (typeof isDoneLoading !== 'undefined') {
+			this.set('doneLoading', true);
+			selected = this.get('array').findProperty('item', this.latestNode ).hash;
+			$('.nav.nav-tabs li a[data-target="' + selected + '"]').trigger('click');
+		} 
+		if (this.findProperty('isDoneLoading', false)) {
+			this.set('doneLoading', false);
+		}
+	}.observes('content.@each.isDoneLoading'),
 	latlongObs: function(obj, keyName) {
-		if (this.get(keyName)) {
-			this.changePosition();
+		var loc = this.findProperty('changePos', true),
+			selected;
+		if (loc) {
+			this.latestNode = loc;
+			selected = this.get('array').findProperty('item', this.latestNode ).hash;
+			$('.nav.nav-tabs li a[data-target="' + selected + '"]').trigger('click');
+			loc.loadTemps();
+			Gmap.currentNode = loc;
 		}
 
-	}.observes('content.changePos'),
-	changePosition: function(){
-		var content = this.get('content')
-			lat = content.get('lat'),
-			lon = content.get('lon');
-		App.get('router').send('changeLat', {
-			lat: lat,
-			lon: lon
-		});
-
-	  }
+	}.observes('content.@each.changePos'),
+	array: function() {
+	  return this.map(function(i, idx) {
+		var trueI = parseInt(idx) + 1;
+		return { hash: ".tab-" + trueI, tabname: "tab" + trueI, item: i, index: trueI};
+	  });
+	}.property('@each')
 });
 
 App.FindTempsView = Ember.View.extend({
-  templateName: 'temperatures'
+  templateName: 'temperature-view'
 });
 
-App.Temperature = Ember.Object.extend({
+App.TabsCollectionView = Ember.CollectionView.extend({
+	classNames: ['tab-content']
+});
+
+App.LocaleView = Ember.View.extend({
+  tagName: "div",
+  classNameBindings: ['itemId'],
+  templateName: 'locale-view',
+  itemId: function() {
+        return "tab-pane tab-%@".fmt(this.get('content.index'));
+    }.property('content.index')/*,
+  loadngObs: function(obj, keyName, value) {
+		var isDoneLoading = this.get('content.isDoneLoading');
+		if (typeof isDoneLoading === true) {
+			$('.nav.nav-tabs li:last a').trigger('click');
+		}
+	}.observes('content.isDoneLoading')*/
+});
+
+App.Temperatures = Ember.Object.extend({
+  tempTabArr: null,
+  init: function() {
+	this.tempTabArr = [];
+  },
+  addNode: function(LatLong) {
+    var node = App.Locale.create({ lat: LatLong.lat().toString(), 
+										 lon: LatLong.lng().toString(), 
+										 indoorNodes: [], 
+										 outdoorNodes: [], 
+										 notSpecNodes: [] });
+	this.tempTabArr.pushObject(node);
+	return node;
+  }
+});
+
+App.Locale = Ember.Object.extend({
   lat: null,
   lon: null,
   indoorNodes: null, 
   outdoorNodes: null,
   notSpecNodes: null,
   changePos: null,
-  isLoading: null,
+  isDoneLoading: null,
   currLoadint: null,
   tempUnts: 'F',
   lastUpdate: null,
+  //TODO: Create latitude/Longitude array!!!!
   init: function() {
 	this._super();
-	this.set('indoorNodes',[]);
-	this.set('outdoorNodes',[]);
-	this.set('notSpecNodes',[]);
-	this.set('currLoadint', 0);
+	this.set('currLoadint', 0.10);
   },
   
   allTemps: function(){
@@ -226,8 +286,7 @@ App.Temperature = Ember.Object.extend({
 		
 	loadTemps: function() {
 		var self = this;
-		self.set('isLoading',true);
-		self.set('currLoadint', 0.10);
+		self.set('isDoneLoading',false);
 		
 		cosm.request(
 			{
@@ -239,7 +298,9 @@ App.Temperature = Ember.Object.extend({
 					incUnit = 1/i,
 					resl;
 					
-					
+					self.set('indoorNodes',[]);
+					self.set('outdoorNodes',[]);
+					self.set('notSpecNodes',[]);
 					
 					while(i--) {
 						resl = res[i].location;
@@ -247,31 +308,29 @@ App.Temperature = Ember.Object.extend({
 						switch(exposure)
 						{
 							case 'indoor':
-							  self.indoorNodes.addObject(App.Temperature.create(res[i]));
+							  self.indoorNodes.addObject(App.Locale.create(res[i]));
 							  break;
 							case 'outdoor':
-							  self.outdoorNodes.addObject(App.Temperature.create(res[i]));
+							  self.outdoorNodes.addObject(App.Locale.create(res[i]));
 							  break;
 							default:
-							  self.notSpecNodes.addObject(App.Temperature.create(res[i]));
+							  self.notSpecNodes.addObject(App.Locale.create(res[i]));
 						}
 						self.set('currLoadint', begin * incUnit);
 						begin = begin + 1;
 					}
 					
-					Gmap.TempModel = self;
 
 					self.set('changePos', false);	
 					setTimeout(function() {
 						self.set('currLoadint', 102);
-						self.set('isLoading',false);
+						self.set('isDoneLoading',true);
 						}, 600);
 			 }
 			});
 
 		return self;
 	}
-
 });
 
 App.Router = Ember.Router.extend({
@@ -279,34 +338,53 @@ App.Router = Ember.Router.extend({
     root: Ember.Route.extend({
 		aRoute: Ember.Route.extend({
             route: '/',
-			goToTemp: Ember.Route.transitionTo('temperatures')
+			goToTemp: Ember.Route.transitionTo('temperatures.index')
         }),
 		temperatures: Ember.Route.extend({
-			route: '/temp/:lat/:lon',
-			changeLat: Ember.Route.transitionTo('temperatures'),
-			connectOutlets: function(router, temps){
-				 var currtemp = App.Temperature.create({ lat: temps.lat, lon: temps.lon });
+			route: '/temp',
+			changeLat: Ember.Route.transitionTo('index'),
+			index: Ember.Route.extend({
+				route: '/:lat/:lon',
+				connectOutlets: function(router, temps){
+					 var mpoint = App.Locale.create({ lat: temps.lat, 
+															 lon: temps.lon, 
+															 indoorNodes: [], 
+															 outdoorNodes: [], 
+															 notSpecNodes: [] }),
+						 tabsTemp = App.Temperatures.create();											
 
-				 router.get('applicationController').connectOutlet({
-							  name: 'findTemps',
-							  context: currtemp.loadTemps()
-							});
-				  
-			},
-			serialize: function(router, context){
-				
-                return {lat: context.lat, lon: context.lon};
-            },
-            deserialize: function(router, urlParams){
-				router.get('applicationController').set('loading', true);
-				if (typeof window.google === 'undefined')  {
-					Gmap.lat = urlParams.lat;
-					Gmap.lon = urlParams.lon;
-				} else { 
-					Gmap.setMyCenter(urlParams.lat, urlParams.lon);
+					 router.get('applicationController').connectOutlet({
+								  name: 'findTemps',
+								  context: tabsTemp.tempTabArr
+								});
+					
+					 var testing = tabsTemp.get('tempTabArr');
+					
+					 testing.pushObject(mpoint);
+					 Gmap.clearAllMarkers();
+					 Gmap.TempModel = tabsTemp;
+					
+				},
+				serialize: function(router, context){
+					
+					return {lat: context.lat, lon: context.lon};
+				},
+				deserialize: function(router, urlParams){
+					router.get('applicationController').set('loading', true);
+					if (typeof window.google === 'undefined')  {
+						Gmap.lat = urlParams.lat;
+						Gmap.lon = urlParams.lon;
+					} else { 
+						Gmap.setMyCenter(urlParams.lat, urlParams.lon);
+					}
+					return {lat: urlParams.lat, lon: urlParams.lon};
 				}
-                return {lat: urlParams.lat, lon: urlParams.lon};
-            }
+			})
+			//,
+			//temptwo: Ember.Route.extend({
+			//	route: '/'
+			
+		//	})
 		})
 	})
 });

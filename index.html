@@ -21,13 +21,13 @@
   <![endif]-->
    <!--<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyBN9sWx5KtunbDEB3xBs1urR_yWstUKmzs&sensor=true"></script>-->
 </head>
-<body>
+<body class="prelative">
 
 <script type="text/x-handlebars" data-template-name="application">
 <div class="container-fluid">
   <div class="row-fluid">
 	  <div class="span2"></div>
-	  <div class="span8 ">
+	  <div class="span8">
 		  <h1 class="center">Local Temperature Sensors</h1>
 		  <div class="row-fluid">
 			<div class="span12">
@@ -36,119 +36,136 @@
 				</div>
 			</div>
 		  </div>
-			
-			{{#if loading}}
+			{{#unless dloading}}
 				<div class="smallLoadingProg progress progress-striped active">
 					<div class="bar" {{bindAttr style="GloadInc"}}"></div>
 				</div>
-			{{/if}}
+			{{/unless}}
 		  <div class="row-fluid">
 			{{outlet}}
 		  </div>
 	  </div>
-	  <div class="span2"></div>
   </div>
 </div>
 
 
 </script>
 
-<script type="text/x-handlebars" data-template-name="temperatures">
+<script type="text/x-handlebars" data-template-name="locale-view">
+{{#with view.content}}
+{{#if item.isDoneLoading}}
+<div>
 
-{{#unless controller.loading}}
-	<div {{bindAttr class="controller.loading"}}>
-
-		<div class="span4 breakword">
-		{{#if controller.allTemps.indoor}}
-			<h2>Indoor</h2>
-			{{#each d in controller.allTemps.indoor}}
-			<div class="well well-small">
-			  <h3 class="text-success">{{d.getTemp}}</h3>
-			  <div>
-				<strong>Feed info</strong>
-				<div><span class="label">Title</span> {{d.title}}</div>
-				<div><span class="label">Creator</span> <a {{bindAttr href="d.creator"}} target="_blank" >{{d.getCreator}}</a></div>
-				<div><span class="label">Feed</span> <a {{bindAttr href="d.feed"}} target="_blank">The feed</a></div>
-				<div><span class="label">Last update</span> {{d.getLastUpdateDate}}</div>
-				<div><span class="label">Status</span> {{d.status}}</div>
-				{{#if d.getTags}}
-					<div><span class="label">Tags</span> {{d.getTags}}</div>
-				{{/if}}
-				<div><span class="label">Lat</span> {{d.location.lat}}</div>
-				<div><span class="label">Lon</span> {{d.location.lon}}</div>
-			  </div>
-			</div>
-			{{/each}}
-		{{else}}
-			<h3>No indoor nodes</h3>
-		{{/if}}
+	<div class="span4 breakword">
+	{{#if item.allTemps.indoor}}
+		<h2>Indoor</h2>
+		{{#each d in item.allTemps.indoor}}
+		<div class="well well-small">
+		  <h3 class="text-success">{{d.getTemp}}</h3>
+		  <div>
+			<strong>Feed info</strong>
+			<div><span class="label">Title</span> {{d.title}}</div>
+			<div><span class="label">Creator</span> <a {{bindAttr href="d.creator"}} target="_blank" >{{d.getCreator}}</a></div>
+			<div><span class="label">Feed</span> <a {{bindAttr href="d.feed"}} target="_blank">The feed</a></div>
+			<div><span class="label">Last update</span> {{d.getLastUpdateDate}}</div>
+			<div><span class="label">Status</span> {{d.status}}</div>
+			{{#if d.getTags}}
+				<div><span class="label">Tags</span> {{d.getTags}}</div>
+			{{/if}}
+			<div><span class="label">Lat</span> {{d.location.lat}}</div>
+			<div><span class="label">Lon</span> {{d.location.lon}}</div>
+		  </div>
 		</div>
-		
-		<div class="span4 breakword">
-		{{#if controller.allTemps.outdoor}}
-			<h2>Outdoor</h2>
-			{{#each d in controller.allTemps.outdoor}}
-			<div class="well well-small">
-			  <h3 class="text-success">{{d.getTemp}}</h3>
-			  <div>
-				<strong>Feed info</strong>
-				<div><span class="label">Title</span> {{d.title}}</div>
-				<div><span class="label">Creator</span> <a {{bindAttr href="d.creator"}} target="_blank" >{{d.getCreator}}</a></div>
-				<div><span class="label">Feed</span> <a {{bindAttr href="d.feed"}} target="_blank">The feed</a></div>
-				<div><span class="label">Last update</span> {{d.getLastUpdateDate}}</div>
-				<div><span class="label">Status</span> {{d.status}}</div>
-				{{#if d.getTags}}
-					<div><span class="label">Tags</span> {{d.getTags}}</div>
-				{{/if}}
-				<div><span class="label">Lat</span> {{d.location.lat}}</div>
-				<div><span class="label">Lon</span> {{d.location.lon}}</div>
-			  </div>
-			</div>
-			{{/each}}
-		{{else}}
-			<h3>No Outdoor nodes</h3>
-		{{/if}}
-		</div>
-		
-		<div class="span4 breakword">
-		{{#if controller.allTemps.special}}
-			<h2>Misc.</h2>
-			{{#each d in controller.allTemps.special}}
-			<div class="well well-small">
-			  <h3 class="text-success">{{d.getTemp}}</h3>
-			  <div>
-				<strong>Feed info</strong>
-				<div><span class="label">Title</span> {{d.title}}</div>
-				<div><span class="label">Creator</span> <a {{bindAttr href="d.creator"}} target="_blank" >{{d.getCreator}}</a></div>
-				<div><span class="label">Feed</span> <a {{bindAttr href="d.feed"}} target="_blank">The feed</a></div>
-				<div><span class="label">Last update</span> {{d.getLastUpdateDate}}</div>
-				<div><span class="label">Status</span> {{d.status}}</div>
-				{{#if d.getTags}}
-					<div><span class="label">Tags</span> {{d.getTags}}</div>
-				{{/if}}
-				<div><span class="label">Lat</span> {{d.location.lat}}</div>
-				<div><span class="label">Lon</span> {{d.location.lon}}</div>
-			  </div>
-			</div>
-			{{/each}}
-		{{else}}
-			<h3>No Misc. nodes</h3>
-		{{/if}}
-		</div>
-
+		{{/each}}
+	{{else}}
+		<h3>No Indoor nodes</h3>
+	{{/if}}
 	</div>
-{{/unless}}
+	
+	<div class="span4 breakword">
+	{{#if item.allTemps.outdoor}}
+		<h2>Outdoor</h2>
+		{{#each d in item.allTemps.outdoor}}
+		<div class="well well-small">
+		  <h3 class="text-success">{{d.getTemp}}</h3>
+		  <div>
+			<strong>Feed info</strong>
+			<div><span class="label">Title</span> {{d.title}}</div>
+			<div><span class="label">Creator</span> <a {{bindAttr href="d.creator"}} target="_blank" >{{d.getCreator}}</a></div>
+			<div><span class="label">Feed</span> <a {{bindAttr href="d.feed"}} target="_blank">The feed</a></div>
+			<div><span class="label">Last update</span> {{d.getLastUpdateDate}}</div>
+			<div><span class="label">Status</span> {{d.status}}</div>
+			{{#if d.getTags}}
+				<div><span class="label">Tags</span> {{d.getTags}}</div>
+			{{/if}}
+			<div><span class="label">Lat</span> {{d.location.lat}}</div>
+			<div><span class="label">Lon</span> {{d.location.lon}}</div>
+		  </div>
+		</div>
+		{{/each}}
+	{{else}}
+		<h3>No Outdoor nodes</h3>
+	{{/if}}
+	</div>
+	
+	<div class="span4 breakword">
+	{{#if item.allTemps.special}}
+		<h2>Misc.</h2>
+		{{#each d in item.allTemps.special}}
+		<div class="well well-small">
+		  <h3 class="text-success">{{d.getTemp}}</h3>
+		  <div>
+			<strong>Feed info</strong>
+			<div><span class="label">Title</span> {{d.title}}</div>
+			<div><span class="label">Creator</span> <a {{bindAttr href="d.creator"}} target="_blank" >{{d.getCreator}}</a></div>
+			<div><span class="label">Feed</span> <a {{bindAttr href="d.feed"}} target="_blank">The feed</a></div>
+			<div><span class="label">Last update</span> {{d.getLastUpdateDate}}</div>
+			<div><span class="label">Status</span> {{d.status}}</div>
+			{{#if d.getTags}}
+				<div><span class="label">Tags</span> {{d.getTags}}</div>
+			{{/if}}
+			<div><span class="label">Lat</span> {{d.location.lat}}</div>
+			<div><span class="label">Lon</span> {{d.location.lon}}</div>
+		  </div>
+		</div>
+		{{/each}}
+	{{else}}
+		<h3>No Misc. nodes</h3>
+	{{/if}}
+	</div>
 
+</div>
+{{/if}}
+{{/with}}
+</script>
+
+
+<script type="text/x-handlebars" data-template-name="temperature-view">
+
+<div class="tabbable">
+<ul class="nav nav-tabs">
+{{#each locale in array}}
+  <li>
+    <a {{bindAttr data-target="locale.hash"}} data-toggle="tab">Marker {{locale.index}}</a>
+  </li>
+{{/each}}
+</ul>
+
+ {{collection App.TabsCollectionView
+        contentBinding="controller.array"
+        itemViewClass="App.LocaleView" }}
+
+</div>
 </script>
 
   <!-- The missing protocol means that it will match the current protocol, either http or https. If running locally, we use the local jQuery. -->
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
   <script>window.jQuery || document.write('<script src="js/libs/jquery-1.7.2.min.js"><\/script>')</script>
-  <script src="js/libs/bootstrap.min.js"></script>
+  <script src="js/libs/bootstrap.js"></script>
   <script src="js/cosmjs/cosmjs-1.0.0.js?v=2"></script>
   <script src="js/libs/handlebars-1.0.0.beta.6.js"></script>
-  <script src="js/libs/ember-latest.js"></script>
-  <script src="js/gmaps.js?v=139"></script>
-  <script src="js/newApp.js?v=208"></script>
+  <script src="js/libs/ember-1.0.0-pre.2.js"></script>
+  <script src="js/gmaps.js?v=2012"></script>
+  <script src="js/newApp.js?v=2012"></script>
 </body>
 </html>
