@@ -18,7 +18,7 @@ Gmap = {
 			mapTypeId: google.maps.MapTypeId.ROADMAP
 		  },
 		  currRoute = App.get('router'),
-		  intialNode = self.currentNode;
+		  intialNode = null;
 	  center = new google.maps.LatLng(self.lat, self.lon);
 	  self.latLong = center;
 	  self.map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
@@ -31,22 +31,24 @@ Gmap = {
 	  });
 	  
 	  
-	  google.maps.event.addListener(self.marker, 'dragend', function(event) {
-		var thisNode = intialNode;
-		self.marker = this;
-		self.setNewPosition(event.latLng, thisNode);
-	  });
-	  
 	  google.maps.event.addListener(this.map, 'dblclick', function(event) {
+		self.count = self.count + 1;
 		self.createNewMarker(event.latLng);
 	  });
 	  
 	  if (currRoute.currentState.name === 'aRoute') {
 		self.etimeout = setTimeout(self.getDefaultLocal, 10000);
 	  	navigator.geolocation.getCurrentPosition(self.getCurrentLocal, self.getDefaultLocal,{timeout:5000});
+		
 	  }
 	  
+	  if (this.TempModel) this.addDragHandle(this.TempModel.get('tempTabArr')[0], this.marker);
 	},
+  setTempModel: function(mdl) {
+	this.TempModel= mdl;
+	if (typeof google === 'undefined') return;
+	this.addDragHandle(this.TempModel.get('tempTabArr')[0], this.marker);
+  },
   getCurrentLocal: function(p) {
 	clearTimeout(Gmap.etimeout);
 	var lat = p.coords.latitude,
@@ -55,15 +57,8 @@ Gmap = {
 		
 		Gmap.setMyCenter(lat, lon);
 		App.get('router').send(handler, {
-			lat: lat,
-			lon: lon,
-			indoorNodes: [], 
-			outdoorNodes: [], 
-			notSpecNodes: []
-		});
-		
-		//Gmap.geoflag = 1;
-		
+			cord: lat + "%" + lon
+		});		
   },
   getDefaultLocal: function(err) {
 		clearTimeout(Gmap.etimeout);
@@ -73,14 +68,18 @@ Gmap = {
   		
 		Gmap.setMyCenter(LAT, LON);
 		App.get('router').send(handler, {
-			lat: LAT,
-			lon: LON,
-			indoorNodes: [], 
-			outdoorNodes: [], 
-			notSpecNodes: []
+			cord: LAT + "%" + LON
 		});
-		
-		//Gmap.geoflag = 1;
+
+  },
+  addDragHandle: function(node, marker) {
+		var self = this;
+  		google.maps.event.addListener(marker, 'dragend', function(event) {
+			var thisNode = node;
+			self.marker = marker;
+			self.setNewPosition(event.latLng, thisNode);
+		  })
+  
   },
   loadMap: function() {
 	  var script = document.createElement("script");
@@ -113,25 +112,23 @@ Gmap = {
   },
   createNewMarker: function(LatLong) {
 	var self = this,
+		mTitle = "Marker " + self.count,
 		nMarker = new google.maps.Marker({
 		position: LatLong,
 		map: this.map,
 		draggable: true,
-		title: "Marker " + (++self.count)
+		title: mTitle
 	  }),
 	  node;
 	  
 	  self.markerArr.push(nMarker);
 	  node = this.TempModel.addNode(LatLong);
 	  
-	  google.maps.event.addListener(nMarker, 'dragend', function(event) {
-		var thisNode = node;
-		self.marker = this;
-		self.setNewPosition(event.latLng, thisNode);
-	  });
+	  this.addDragHandle(node, nMarker);
   
   },
   clearAllMarkers: function() {
+	this.count = 1;
 	var i = this.markerArr.length;
     for (; i--; ) {
 		this.markerArr[i].setMap(null);

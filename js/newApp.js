@@ -344,10 +344,11 @@ App.Router = Ember.Router.extend({
 			route: '/temp',
 			changeLat: Ember.Route.transitionTo('index'),
 			index: Ember.Route.extend({
-				route: '/:lat/:lon',
+				route: '/:cord',
 				connectOutlets: function(router, temps){
-					 var mpoint = App.Locale.create({ lat: temps.lat, 
-															 lon: temps.lon, 
+					 var pArray = temps.cord.split('%'),
+						 mpoint = App.Locale.create({ lat: pArray[0], 
+															 lon: pArray[1], 
 															 indoorNodes: [], 
 															 outdoorNodes: [], 
 															 notSpecNodes: [] }),
@@ -362,29 +363,24 @@ App.Router = Ember.Router.extend({
 					
 					 testing.pushObject(mpoint);
 					 Gmap.clearAllMarkers();
-					 Gmap.TempModel = tabsTemp;
+					 Gmap.setTempModel(tabsTemp);
 					
 				},
 				serialize: function(router, context){
 					
-					return {lat: context.lat, lon: context.lon};
+					return {cord: context.cord};
 				},
 				deserialize: function(router, urlParams){
 					router.get('applicationController').set('loading', true);
 					if (typeof window.google === 'undefined')  {
-						Gmap.lat = urlParams.lat;
-						Gmap.lon = urlParams.lon;
+						Gmap.lat = urlParams.cord.split("%")[0];
+						Gmap.lon = urlParams.cord.split("%")[1];
 					} else { 
-						Gmap.setMyCenter(urlParams.lat, urlParams.lon);
+						Gmap.setMyCenter(urlParams.cord.split("+")[0], urlParams.cord.split("%")[1]);
 					}
-					return {lat: urlParams.lat, lon: urlParams.lon};
+					return {cord: urlParams.cord};
 				}
 			})
-			//,
-			//temptwo: Ember.Route.extend({
-			//	route: '/'
-			
-		//	})
 		})
 	})
 });
